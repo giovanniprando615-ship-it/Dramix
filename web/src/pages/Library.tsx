@@ -19,7 +19,7 @@ export default function Library() {
   return (
     <div className="space-y-10">
       <section className="space-y-4" aria-labelledby="fav">
-        <h1 id="fav" className="text-2xl font-black text-white">Minha Lista</h1>
+        <h1 id="fav" className="font-display text-[44px] leading-none text-white md:text-[56px]">Minha Lista</h1>
         {data.favorites.length ? (
           <div className={grid}>{data.favorites.map(s => <SeriesCard key={s.id} series={s} className="w-auto sm:w-auto md:w-auto" />)}</div>
         ) : (
@@ -30,7 +30,7 @@ export default function Library() {
         )}
       </section>
       <section className="space-y-4" aria-labelledby="hist">
-        <h2 id="hist" className="text-lg font-bold text-white">Histórico</h2>
+        <h2 id="hist" className="font-display text-[30px] leading-none text-white">Histórico</h2>
         {data.history.length ? (
           <div className={grid}>{data.history.map(h => <SeriesCard key={h.series.id} series={h.series} progress={h.progressPercent} className="w-auto sm:w-auto md:w-auto" />)}</div>
         ) : <Empty icon={History} title="Nada assistido ainda" text="Os episódios que você assistir aparecem aqui para continuar de onde parou." />}

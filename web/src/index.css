@@ -3,18 +3,55 @@
 @tailwind utilities;
 
 @layer base {
-  html { color-scheme: dark; -webkit-tap-highlight-color: transparent; }
-  body { @apply bg-ink font-sans text-gray-100; }
+  html { color-scheme: dark; -webkit-tap-highlight-color: transparent; overflow-x: clip; }
+  body { @apply bg-ink font-sans text-[#F3EFEA]; overflow-x: clip; }
   :focus-visible { outline: 2px solid #E52E4D; outline-offset: 2px; border-radius: 10px; }
   input[type='search']::-webkit-search-cancel-button { filter: invert(0.6); }
+  ::selection { background: #E52E4D; color: #fff; }
+
+  /* Granulação de película por cima de tudo: dá textura de cinema às superfícies escuras */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+@layer components {
+  /* Títulos de pôster e manchetes: Archivo condensada e pesada */
+  .font-display { font-family: 'Archivo Variable', 'Plus Jakarta Sans Variable', sans-serif; font-stretch: 68%; font-weight: 850; letter-spacing: -0.01em; }
+  .poster-title { @apply font-display uppercase leading-[0.86]; text-shadow: 0 2px 18px rgba(0,0,0,0.65); }
+
+  /* Tratamento de cor dos pôsteres: puxa as fotos para a mesma temperatura (sombras vinho, luz quente) */
+  .poster-grade::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(6,8,16,0) 38%, rgba(6,8,16,0.55) 66%, rgba(6,8,16,0.96) 100%),
+      linear-gradient(200deg, rgba(229,46,77,0.18), rgba(80,10,40,0.28));
+    mix-blend-mode: normal;
+  }
+
+  .glass { @apply border border-white/10 bg-white/[0.04] backdrop-blur-xl; }
 }
 
 @layer utilities {
   .scrollbar-none::-webkit-scrollbar { display: none; }
   .scrollbar-none { scrollbar-width: none; }
-  .text-outline { -webkit-text-stroke: 2px rgba(255,255,255,0.55); color: transparent; }
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .full-bleed { position: relative; left: 50%; width: 100vw; margin-left: -50vw; }
+  .text-balance { text-wrap: balance; }
+  .mask-fade-r { -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
 }
+
+@keyframes kenburns { from { transform: scale(1.02); } to { transform: scale(1.12) translate3d(-1%, -1%, 0); } }
+.animate-kenburns { animation: kenburns 9s ease-out forwards; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }

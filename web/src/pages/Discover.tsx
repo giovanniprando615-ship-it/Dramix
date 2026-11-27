@@ -49,7 +49,7 @@ export default function Discover() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-black text-white md:text-3xl">Descobrir</h1>
+        <h1 className="font-display text-[44px] leading-none text-white md:text-[56px]">Descobrir</h1>
         <p className="text-sm text-gray-400">Todo o catálogo do DRAMIX em um lugar.</p>
       </header>
 

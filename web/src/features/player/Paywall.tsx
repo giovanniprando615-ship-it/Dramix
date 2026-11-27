@@ -82,8 +82,8 @@ export function Paywall({ series, episodeNumber, access, onUnlocked }: { series:
   const header = (
     <div className="space-y-2 text-center">
       <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-coin/15 text-coin"><Lock className="h-6 w-6" aria-hidden /></span>
-      <h2 className="text-lg font-black text-white">Episódio {episodeNumber} bloqueado</h2>
-      <p className="text-xs text-gray-400">Os episódios 1 a {access.freeLimit} são grátis. Continue a história:</p>
+      <h2 className="font-display text-[34px] leading-none text-white">Episódio {episodeNumber}</h2>
+      <p className="text-xs text-gray-400">Os episódios 1 a {access.freeLimit} são grátis. Escolha como continuar a história:</p>
     </div>
   );
 

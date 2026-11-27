@@ -30,7 +30,7 @@ export function Dialog({ open, onOpenChange, title, description, hideTitle, chil
           )}
         >
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/15 sm:hidden" aria-hidden />
-          <RD.Title className={cn('pr-10 text-xl font-black text-white', hideTitle && 'sr-only')}>{title}</RD.Title>
+          <RD.Title className={cn('font-display pr-10 text-[30px] leading-[0.95] text-white', hideTitle && 'sr-only')}>{title}</RD.Title>
           {description ? <RD.Description className="mt-1 text-xs text-gray-400">{description}</RD.Description> : <RD.Description className="sr-only">{title}</RD.Description>}
           {dismissible && (
             <RD.Close className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full text-gray-400 hover:bg-white/5 hover:text-white" aria-label="Fechar">

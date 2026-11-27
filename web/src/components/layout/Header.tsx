@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import * as DM from '@radix-ui/react-dropdown-menu';
 import { Search, Crown } from 'lucide-react';
 import { useGift, useSession, resetAllData } from '@/lib/queries';
@@ -13,8 +13,8 @@ import { toast } from 'sonner';
 export function Logo() {
   return (
     <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label="DRAMIX, página inicial">
-      <img src="./icon.svg" alt="" className="h-8 w-8 rounded-lg shadow-md shadow-brand/30" />
-      <span className="text-xl font-black tracking-wider text-white">DRAMIX</span>
+      <img src="./icon.svg" alt="" className="h-8 w-8 rounded-[10px] shadow-lg shadow-brand/40" />
+      <span className="font-display text-[26px] leading-none tracking-wide text-white">DRAMIX</span>
     </Link>
   );
 }
@@ -46,6 +46,15 @@ export function Header() {
   const navigate = useNavigate();
   const logout = useLogout();
   const [q, setQ] = useState('');
+  const { pathname } = useLocation();
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 24);
+    on();
+    window.addEventListener('scroll', on, { passive: true });
+    return () => window.removeEventListener('scroll', on);
+  }, []);
+  const overHero = (pathname === '/' || pathname.startsWith('/series/')) && !scrolled;
 
   const search = (e: FormEvent) => {
     e.preventDefault();
@@ -56,13 +65,13 @@ export function Header() {
   const giftReady = !!user && !!gift?.available;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-ink/90 backdrop-blur-xl">
+    <header className={cn('sticky top-0 z-40 border-b transition-[background-color,border-color] duration-300', overHero ? 'border-transparent bg-transparent' : 'border-white/[0.06] bg-ink/80 backdrop-blur-2xl')}>
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-8">
           <Logo />
           <nav className="hidden items-center gap-1 text-xs font-semibold md:flex" aria-label="Principal">
             {NAV.map(n => (
-              <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cn('rounded-xl px-3.5 py-2 text-gray-300 hover:bg-white/5 hover:text-white', isActive && 'bg-white/10 text-white')}>
+              <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cn('relative px-3 py-2 text-[13px] text-gray-300 transition hover:text-white', isActive && 'text-white after:absolute after:inset-x-3 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-brand')}>
                 {n.label}
               </NavLink>
             ))}
@@ -73,7 +82,7 @@ export function Header() {
           <form onSubmit={search} role="search" className="relative hidden w-44 sm:block lg:w-60">
             <label htmlFor="header-search" className="sr-only">Buscar minisséries</label>
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" aria-hidden />
-            <input id="header-search" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar minisséries" className="h-9 w-full rounded-full border border-white/10 bg-white/5 pl-8 pr-3 text-xs text-white outline-none placeholder:text-gray-500 focus:border-brand focus:bg-black/50" />
+            <input id="header-search" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar minisséries" className="h-9 w-full rounded-full border border-white/10 bg-black/30 pl-8 pr-3 text-xs text-white outline-none backdrop-blur placeholder:text-gray-400 focus:border-brand focus:bg-black/60" />
           </form>
           <Link to="/discover" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-gray-300 sm:hidden" aria-label="Buscar">
             <Search className="h-4 w-4" />

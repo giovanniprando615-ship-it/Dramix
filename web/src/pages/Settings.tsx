@@ -58,7 +58,7 @@ function Index() {
   const { data: user } = useSession();
   return (
     <>
-      <h1 className="mb-6 text-2xl font-black text-white">Configurações</h1>
+      <h1 className="font-display mb-6 text-[44px] leading-none text-white">Configurações</h1>
       <div className="space-y-6">
         <Group title="Conta">
           <Item to="account" title={user ? 'Configurações da conta' : 'Entrar ou criar conta'} desc={user ? 'Nome, e-mail, senha, preferências e exclusão' : 'Ganhe moedas de boas-vindas'} />

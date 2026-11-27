@@ -73,7 +73,7 @@ function FeedItem({ series, index, active, muted, onToggleMute }: { series: Seri
           {freeLabel(series.free_episodes_count) && <span className="rounded-md bg-emerald-500/20 px-2 py-0.5 font-bold text-emerald-300">{freeLabel(series.free_episodes_count)}</span>}
           <span className="text-gray-300">{series.genres.slice(0, 3).join(', ')}</span>
         </div>
-        <h2 className="text-xl font-black leading-tight text-white">{series.title}</h2>
+        <h2 className="poster-title text-[34px] text-white">{series.title}</h2>
         <p className="line-clamp-2 text-xs text-gray-300">{series.synopsis}</p>
         <button onClick={() => play(series.id, 1)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand px-5 text-sm font-bold text-white hover:bg-brand-hover">
           <Play className="h-4 w-4 fill-current" aria-hidden />Assistir episódio 1

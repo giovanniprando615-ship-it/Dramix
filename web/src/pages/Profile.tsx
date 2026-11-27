@@ -42,7 +42,7 @@ export default function Profile() {
           <img src={safeImg(user.avatar)} alt="" className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-brand to-coin object-cover p-0.5" />
           <div className="space-y-1">
             <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-              <h1 className="text-xl font-black text-white md:text-2xl">{user.name}</h1>
+              <h1 className="font-display text-[34px] leading-none text-white md:text-[40px]">{user.name}</h1>
               <span className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-black', user.isPremium ? 'bg-coin text-black' : 'bg-white/10 text-gray-300')}>{user.isPremium ? 'PREMIUM' : 'PLANO GRÁTIS'}</span>
             </div>
             <p className="text-xs text-gray-400">{user.email || user.phone}</p>

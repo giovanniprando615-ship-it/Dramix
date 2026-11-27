@@ -184,8 +184,8 @@ function PlayerScreen({ seriesId, episode: initialEp, start }: { seriesId: strin
               </>
             ) : (
               <div className="relative grid h-full place-items-center px-6">
-                {poster && <img src={poster} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30 blur-md" />}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/40" />
+                {poster && <img src={poster} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-[6px]" />}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,8,16,0.55),rgba(6,8,16,0.82)_45%,#060810)]" />
                 <div className="relative z-10 flex w-full justify-center">
                   <Paywall series={data.series} episodeNumber={ep} access={data.access} onUnlocked={() => { refetch(); qc.invalidateQueries(); }} />
                 </div>
@@ -224,7 +224,7 @@ function PlayerScreen({ seriesId, episode: initialEp, start }: { seriesId: strin
             <X className="h-5 w-5" />
           </button>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-white">{series?.title}</p>
+            <p className="font-display truncate text-[20px] leading-tight text-white">{series?.title}</p>
             <p className="truncate text-[11px] text-gray-300">Episódio {ep} de {total}{data && ` • ${data.episode.title}`}</p>
           </div>
           <button onClick={() => setDrawer(true)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-black/50 text-white backdrop-blur" aria-label="Lista de episódios">

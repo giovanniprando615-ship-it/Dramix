@@ -13,6 +13,7 @@
     "test:e2e": "node e2e/run.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/archivo": "^5.1.0",
     "@fontsource-variable/plus-jakarta-sans": "5.1.0",
     "@hookform/resolvers": "3.9.1",
     "@radix-ui/react-dialog": "1.1.2",
