@@ -2,104 +2,105 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DRAMIX — Streaming de Minisséries Verticais</title>
-  
-  <!-- Tailwind CSS Engine oficial Antigravity -->
-  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>DRAMIX — Minisséries em episódios curtos</title>
+  <meta name="description" content="Romance, drama, ação e suspense em minisséries de episódios curtos. Os 5 primeiros episódios de cada história são grátis.">
+  <meta name="theme-color" content="#060810">
+
+  <!-- Tailwind (CDN oficial). Para produção, compile o CSS com o Tailwind CLI e remova esta tag. -->
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
-    
     body {
       font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
       background-color: #060810;
       color: #f3f4f6;
     }
 
-    /* Ocultar scrollbar mantendo funcionalidade */
-    .scrollbar-none::-webkit-scrollbar {
-      display: none;
-    }
-    .scrollbar-none {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+    /* Foco visível para navegação por teclado */
+    :focus-visible {
+      outline: 2px solid #E52E4D;
+      outline-offset: 2px;
+      border-radius: 10px;
     }
 
-    .line-clamp-1 {
-      display: -webkit-box;
-      -webkit-line-clamp: 1;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .line-clamp-2 {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .line-clamp-3 {
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+    /* Item de navegação ativo (cabeçalho e barra inferior) */
+    .dx-nav.dx-active { background: rgba(255,255,255,0.1); color: #fff; }
+    .dx-tab.dx-active { color: #fff; }
+    .dx-tab.dx-active svg { color: #E52E4D; }
+
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .line-clamp-1, .line-clamp-2, .line-clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+    .line-clamp-1 { -webkit-line-clamp: 1; }
+    .line-clamp-2 { -webkit-line-clamp: 2; }
+    .line-clamp-3 { -webkit-line-clamp: 3; }
+
+    input[type="search"]::-webkit-search-cancel-button { filter: invert(0.6); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
     }
   </style>
 </head>
 <body class="min-h-screen bg-[#060810] text-[#f3f4f6] selection:bg-[#E52E4D] selection:text-white antialiased flex flex-col justify-between">
 
-  <!-- Header Superior Fixo com Blur Estilo VibeShort -->
-  <header id="dramix-header" class="sticky top-0 z-40 w-full bg-[#060810]/95 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/60 transition-all">
-    <!-- Renderizado dinamicamente pelo app.js -->
+  <a href="#dramix-main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[80] focus:px-4 focus:py-2 focus:rounded-xl focus:bg-[#E52E4D] focus:text-white focus:text-xs focus:font-bold">Pular para o conteúdo</a>
+
+  <header id="dramix-header" class="sticky top-0 z-40 w-full bg-[#060810]/95 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/60">
+    <!-- Renderizado pelo app.js -->
   </header>
 
-  <!-- Container de Conteúdo Principal -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-    <div id="dramix-main-content">
-      <!-- As visualizações (Início, Descobrir, Detalhes, Planos, Perfil, Owner) serão renderizadas aqui -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16 md:pb-0">
+    <div id="dramix-main-content" tabindex="-1" class="outline-none">
+      <!-- Telas (Início, Descobrir, Série, Loja, Planos, Perfil, Configurações, Owner) -->
     </div>
   </main>
 
-  <!-- Rodapé Minimalista Profissional -->
-  <footer class="w-full bg-[#04050A] border-t border-white/10 py-10 mt-16">
+  <footer class="w-full bg-[#04050A] border-t border-white/10 py-10 mt-16 mb-16 md:mb-0">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
-      
       <div class="flex items-center gap-3">
         <span class="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#E52E4D] to-[#ff5b79] flex items-center justify-center font-black text-white text-base shadow-md shadow-[#E52E4D]/30">D</span>
         <div>
           <span class="text-base font-black tracking-wider text-white">DRAMIX</span>
-          <p class="text-[11px] text-gray-400">Plataforma Oficial de Streaming de Minisséries Verticais</p>
+          <p class="text-[11px] text-gray-400">Minisséries em episódios curtos. 5 episódios grátis em cada história.</p>
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-400 font-semibold">
-        <span>🎬 Catálogo Cinematográfico</span>
-        <span>🎁 5 Episódios Grátis por Produção</span>
-        <span>📢 Desbloqueio Diário com Anúncio</span>
-        <span>👑 DRAMIX Premium Sem Limites</span>
-        <span>🔒 Pagamento Seguro</span>
-      </div>
+      <nav class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-gray-400 font-semibold" aria-label="Informações">
+        <a href="#/settings/terms" class="hover:text-white">Termos de uso</a>
+        <a href="#/settings/privacy" class="hover:text-white">Privacidade</a>
+        <a href="#/settings/subscription-policy" class="hover:text-white">Assinaturas e moedas</a>
+        <a href="#/settings/support" class="hover:text-white">Suporte</a>
+      </nav>
 
-      <div class="text-xs text-gray-500 text-center md:text-right">
-        &copy; 2026 DRAMIX Entertainment Inc. Todos os direitos reservados.
-      </div>
-
+      <div class="text-xs text-gray-500 text-center md:text-right">&copy; 2026 DRAMIX. Todos os direitos reservados.</div>
     </div>
   </footer>
 
-  <!-- Scripts Modulares da Arquitetura DRAMIX -->
+  <!-- Dados e regras -->
   <script src="db/database.js"></script>
   <script src="api/backend-service.js"></script>
+  <!-- Componentes -->
+  <script src="components/ui.js"></script>
   <script src="components/player.js"></script>
   <script src="components/rewarded-ad-modal.js"></script>
   <script src="components/checkout-modal.js"></script>
+  <script src="components/onboarding-modal.js"></script>
+  <!-- Telas -->
   <script src="views/home.js"></script>
   <script src="views/discover.js"></script>
   <script src="views/series-details.js"></script>
   <script src="views/subscription.js"></script>
+  <script src="views/store.js"></script>
   <script src="views/profile.js"></script>
+  <script src="views/settings.js"></script>
   <script src="views/owner-panel.js"></script>
   <script src="app.js"></script>
-
 </body>
 </html>
