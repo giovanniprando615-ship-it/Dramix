@@ -18,6 +18,9 @@
       const plans = this.api.getSubscriptionPlans();
       const user = this.api.getCurrentUser();
       const activeSub = user ? user.activeSubscription : null;
+      const { esc, brl } = root.dramixUI;
+      const monthly = plans.find(p => p.id === 'plan-monthly');
+      const usedTrial = user ? !!this.api.db.table('subscriptions').findOne(x => x.user_id === user.id && x.is_trial) : false;
 
       container.innerHTML = `
         <div class="max-w-5xl mx-auto space-y-12 pb-24 pt-4">
@@ -40,7 +43,7 @@
             <div class="p-6 rounded-3xl bg-gradient-to-r from-amber-500/15 via-[#E52E4D]/15 to-transparent border border-amber-500/30 flex flex-col md:flex-row items-center justify-between gap-4">
               <div class="space-y-1 text-center md:text-left">
                 <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Assinatura Ativa</span>
-                <h3 class="text-lg font-bold text-white">Você é assinante ${activeSub.plan_name}</h3>
+                <h3 class="text-lg font-bold text-white">Você é assinante ${esc(activeSub.plan_name)}</h3>
                 <p class="text-xs text-gray-300">Seu acesso está liberado até <b>${new Date(activeSub.end_date).toLocaleDateString('pt-BR')}</b>.</p>
               </div>
               <button id="sub-view-btn-manage" class="py-2.5 px-5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors cursor-pointer">
@@ -49,11 +52,20 @@
             </div>
           ` : ''}
 
+          ${!activeSub && !usedTrial ? `
+            <div class="p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p class="text-xs text-gray-300"><b class="text-white text-sm block">Experimente 3 dias grátis</b>Todos os episódios liberados. Sem cobrança automática no fim do teste.</p>
+              <button id="sub-btn-trial" class="py-2.5 px-5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black flex-shrink-0">Começar teste grátis</button>
+            </div>
+          ` : ''}
+
           <!-- Grid dos 3 Cards de Assinatura -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             ${plans.map(plan => {
               const isAnnual = plan.id === 'plan-annual';
               const isMonthly = plan.id === 'plan-monthly';
+              const annualSaving = isAnnual && monthly ? Math.round((1 - plan.price / (monthly.price * 12)) * 100) : 0;
+              const isCurrent = activeSub && activeSub.plan_id === plan.id;
 
               return `
                 <div class="relative flex flex-col justify-between p-6 md:p-8 rounded-3xl border transition-all duration-300 ${isAnnual ? 'bg-[#10172A] border-amber-500/50 shadow-2xl shadow-amber-500/10 md:-translate-y-2' : 'bg-[#0E1322] border-white/10 hover:border-white/20 shadow-xl'}">
@@ -62,7 +74,7 @@
                   ${plan.badge ? `
                     <div class="absolute -top-3.5 left-1/2 -translate-x-1/2">
                       <span class="px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg ${isAnnual ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-black' : 'bg-[#E52E4D] text-white'}">
-                        ${plan.badge}
+                        ${esc(plan.badge)}
                       </span>
                     </div>
                   ` : ''}
@@ -70,8 +82,8 @@
                   <!-- Cabeçalho do Card -->
                   <div class="space-y-4">
                     <div>
-                      <h3 class="text-lg font-black text-white">${plan.name}</h3>
-                      <p class="text-xs text-gray-400 mt-1 min-h-[32px]">${plan.description}</p>
+                      <h3 class="text-lg font-black text-white">${esc(plan.name)}</h3>
+                      <p class="text-xs text-gray-400 mt-1 min-h-[32px]">${esc(plan.description)}</p>
                     </div>
 
                     <!-- Preço -->
@@ -82,12 +94,12 @@
                         <span class="text-xs text-gray-400 font-medium">/ ${plan.duration_days} dias</span>
                       </div>
 
-                      ${isAnnual ? `
+                      ${isAnnual && annualSaving > 0 ? `
                         <div class="mt-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 font-semibold leading-tight">
-                          Economia de 44% em relação a 12 meses avulsos (R$ 358,80).
+                          ${brl(plan.price / 12)} por mês. Economia de ${annualSaving}% em relação a 12 meses do plano mensal (${brl(monthly.price * 12)}).
                         </div>
                       ` : isMonthly ? `
-                        <p class="text-[11px] text-gray-400 mt-1.5">Apenas ~R$ 0,99 por dia de entretenimento.</p>
+                        <p class="text-[11px] text-gray-400 mt-1.5">Cerca de ${brl(plan.price / plan.duration_days)} por dia.</p>
                       ` : `
                         <p class="text-[11px] text-gray-400 mt-1.5">Perfeito para maratonar no fim de semana.</p>
                       `}
@@ -116,8 +128,8 @@
 
                   <!-- Botão de Ação -->
                   <div class="pt-6">
-                    <button class="w-full py-3.5 rounded-xl font-black text-xs md:text-sm transition-all shadow-lg active:scale-95 cursor-pointer select-plan-btn ${isAnnual ? 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-black shadow-amber-500/20' : 'bg-[#E52E4D] hover:bg-[#c92440] text-white shadow-[#E52E4D]/25'}" data-plan-id="${plan.id}">
-                      Assinar agora
+                    <button class="w-full py-3.5 rounded-xl font-black text-xs md:text-sm transition-all shadow-lg active:scale-95 select-plan-btn ${isCurrent ? 'bg-white/10 text-white/60 cursor-default' : isAnnual ? 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-black shadow-amber-500/20' : 'bg-[#E52E4D] hover:bg-[#c92440] text-white shadow-[#E52E4D]/25'}" data-plan-id="${esc(plan.id)}" ${isCurrent ? 'disabled' : ''}>
+                      ${isCurrent ? 'Seu plano atual' : `Assinar ${esc(plan.name.replace('Plano ', '').toLowerCase())}`}
                     </button>
                   </div>
 
@@ -132,15 +144,15 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <p class="font-bold text-gray-300 mb-1">Período de Validade e Cobrança</p>
-                <p class="leading-relaxed">O plano semanal é cobrado a cada 7 dias (R$ 7,90), o mensal a cada 30 dias (R$ 29,90) e o anual a cada 12 meses (R$ 199,90).</p>
+                <p class="leading-relaxed">${plans.map(p => `${esc(p.name)}: ${brl(p.price)} a cada ${p.duration_days} dias`).join('. ')}.</p>
               </div>
               <div>
                 <p class="font-bold text-gray-300 mb-1">Renovação e Cancelamento</p>
                 <p class="leading-relaxed">A renovação automática pode ser desativada a qualquer momento diretamente no seu Perfil, mantendo seu acesso até o fim do ciclo pago.</p>
               </div>
               <div>
-                <p class="font-bold text-gray-300 mb-1">Confirmação Imediata</p>
-                <p class="leading-relaxed">O acesso Premium é liberado automaticamente após a confirmação do pagamento no backend via PIX ou Cartão de Crédito.</p>
+                <p class="font-bold text-gray-300 mb-1">Arrependimento em 7 dias</p>
+                <p class="leading-relaxed">Pediu reembolso em até 7 dias da primeira contratação? Devolvemos o valor integral. <button id="sub-btn-policy" class="underline text-gray-300 hover:text-white">Ler a política completa</button></p>
               </div>
             </div>
           </div>
@@ -161,6 +173,24 @@
           }
         };
       });
+
+      const policyBtn = container.querySelector('#sub-btn-policy');
+      if (policyBtn) policyBtn.onclick = () => window.dispatchEvent(new CustomEvent('dramix-navigate-view', { detail: { view: 'settings', page: 'subscription-policy' } }));
+
+      const trialBtn = container.querySelector('#sub-btn-trial');
+      if (trialBtn) {
+        trialBtn.onclick = () => {
+          const user = this.api.getCurrentUser();
+          if (!user) return window.dispatchEvent(new CustomEvent('dramix-open-auth-modal', { detail: { mode: 'register' } }));
+          try {
+            const res = this.api.activateFreeTrial(user.id);
+            root.dramixUI.toast(res.message, 'success');
+            window.dispatchEvent(new CustomEvent('dramix-subscription-updated'));
+          } catch (err) {
+            root.dramixUI.toast(err.message, 'error');
+          }
+        };
+      }
 
       const manageBtn = container.querySelector('#sub-view-btn-manage');
       if (manageBtn) {

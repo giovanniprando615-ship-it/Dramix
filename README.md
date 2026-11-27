@@ -1,186 +1,129 @@
-# DRAMIX — Plataforma Profissional de Streaming de Minisséries Verticais
+# DRAMIX — Minisséries em episódios curtos
 
-Redesign completo e implementação da plataforma de streaming vertical **DRAMIX**, inspirada na estética cinematográfica e minimalista do **VibeShort** e grandes plataformas de streaming.
+Plataforma de streaming de minisséries verticais (romance, drama, ação, suspense) com episódios curtos,
+moedas virtuais, loja, assinatura Premium e painel administrativo.
+
+> **Estado atual: protótipo funcional de front-end.** Todas as regras rodam no navegador e os dados ficam
+> no `localStorage`. Serve para validar telas, fluxos e regras de negócio. **Não serve para cobrar
+> usuários reais**: qualquer pessoa consegue alterar o `localStorage` pelo console. Veja
+> [Caminho para produção](#caminho-para-produção).
 
 ---
 
-## 📁 Estrutura da Arquitetura
+## Como executar
+
+Abra `index.html` no navegador (duplo clique) ou rode o servidor local:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File server.ps1
+```
+
+Acesse `http://127.0.0.1:8080`.
+
+**Conta administrativa de desenvolvimento:** `owner@dramix.tv` / `owner123`. Essa conta existe só nos dados de
+exemplo (`db/database.js`) e não aparece em nenhum botão da interface. Troque antes de publicar.
+
+Para recomeçar do zero, apague o item `dramix_database_v4` do `localStorage` (DevTools > Application).
+
+## Testes
+
+```bash
+node tests/api.test.js
+```
+
+Cobre as regras de dinheiro e acesso: 0 moedas para visitante, 50 no cadastro, +20 no presente diário (70),
+logout sem sessão, contas separadas, desbloqueio cobrado uma vez só, compra creditada uma vez só,
+restauração sem duplicar, pacote da série com desconto, Premium, filtro 18+ e permissões do Owner.
+
+---
+
+## Regras de negócio
+
+| Regra | Valor padrão | Onde muda |
+| :--- | :--- | :--- |
+| Episódios grátis por série | 1 a 5 | Painel Owner > Minisséries (por série) e Moedas e loja (padrão) |
+| Bônus de cadastro | 50 moedas, uma vez por conta | Painel Owner > Moedas e loja |
+| Presente diário | 20 moedas, 1 resgate por dia | Painel Owner > Moedas e loja |
+| Preço por episódio | 25 moedas | Painel Owner > Moedas e loja |
+| Pacote "desbloquear o resto da série" | 20% de desconto | Painel Owner > Moedas e loja |
+| Anúncio recompensado | 1 episódio a cada 24 h | Painel Owner > Moedas e loja |
+| Premium | Libera tudo enquanto ativo | Painel Owner > Planos |
+
+**Comportamento das moedas**
+
+- Visitante vê **0 moedas**. Logout remove a sessão e a tela volta a 0.
+- Cada conta tem saldo próprio, calculado a partir do extrato (`coin_transactions`).
+- Cada lançamento tem uma referência única (`welcome_bonus`, `daily_gift:AAAA-MM-DD`, `unlock:<episódio>`,
+  `payment:<transação>`). Repetir a mesma operação não credita nem cobra de novo.
+- Episódio desbloqueado fica liberado para sempre na conta.
+
+**Loja de moedas (sugestão inicial)**
+
+| Pacote | Moedas | Bônus | Total | ≈ episódios |
+| :--- | ---: | ---: | ---: | ---: |
+| R$ 4,90 | 150 | 0 | 150 | 6 |
+| R$ 9,90 | 300 | 30 | 330 | 13 |
+| R$ 19,90 (mais escolhido) | 600 | 120 | 720 | 28 |
+| R$ 39,90 | 1.200 | 360 | 1.560 | 62 |
+| R$ 79,90 (melhor valor) | 2.400 | 960 | 3.360 | 134 |
+
+**Planos Premium:** semanal R$ 7,90, mensal R$ 29,90, anual R$ 199,90, teste grátis de 3 dias (uma vez por conta).
+
+---
+
+## Estrutura
 
 ```
 dramix/
-├── index.html                     # Interface principal cinematográfica (Tailwind CSS Dark Cinema)
-├── server.ps1                     # Servidor HTTP e API REST em PowerShell (Porta 8080)
-├── README.md                      # Documentação técnica e guia de testes
-│
-├── db/
-│   └── database.js                # Banco de dados relacional de 14 tabelas com persistência ACID local
-│
-├── api/
-│   └── backend-service.js         # Backend de autenticação, paywall, anúncios de 24h e assinaturas
-│
+├── index.html                  Página única: cabeçalho, conteúdo, rodapé e carregamento dos scripts
+├── app.js                      Roteador (#/rota), cabeçalho, barra inferior no celular, login/cadastro, logout
+├── server.ps1                  Servidor estático local (porta 8080)
+├── db/database.js              "Banco" em localStorage + dados de exemplo (séries, planos, pacotes, regras)
+├── api/backend-service.js      Todas as regras: contas, moedas, acesso, pagamentos, Owner
 ├── components/
-│   ├── player.js                  # Player vertical 9:16 profissional (histórico, retomada e paywall)
-│   ├── rewarded-ad-modal.js       # Player de anúncio recompensado (15s não pulável, bloqueio diário de 24h)
-│   └── checkout-modal.js          # Checkout PIX e Cartão de Crédito com confirmação real de pagamento
-│
-└── views/
-    ├── home.js                    # Página Inicial: Hero configurável pelo Owner, fileiras horizontais com setas
-    ├── discover.js                # Página Descobrir: busca multi-campo, filtros por gênero e classificação indicativa
-    ├── series-details.js          # Página da Minissérie: ficha técnica, episódios 1-5 grátis e 6+ Premium com cadeado
-    ├── subscription.js            # Planos Premium: R$ 7,90 (semanal), R$ 29,90 (mensal), R$ 199,90 (anual)
-    ├── profile.js                 # Perfil do Usuário: cancelamento de assinatura, histórico e Minha Lista
-    └── owner-panel.js             # Painel Owner: métricas, preços, CRUD de minisséries/episódios e layout
+│   ├── ui.js                   esc() contra XSS, safeUrl(), toast(), brl(), ícone de moeda
+│   ├── player.js               Player vertical 9:16 com autoplay, progresso e lista de episódios
+│   ├── rewarded-ad-modal.js    Paywall: moedas, pacote da série, anúncio diário, Premium
+│   ├── checkout-modal.js       Checkout PIX/cartão para planos e pacotes de moedas (modo de teste)
+│   └── onboarding-modal.js     Faixa etária e gêneros favoritos no primeiro acesso
+├── views/
+│   ├── home.js                 Destaque, continue assistindo, presente diário, temas, fileiras
+│   ├── discover.js             Busca por título/gênero/tema/sinopse, filtros e ordenação
+│   ├── series-details.js       Ficha, episódios grátis/desbloqueados/bloqueados, pacote, compartilhar
+│   ├── store.js                Carteira, presente diário, pacotes, extrato, restaurar compras
+│   ├── subscription.js         Planos, teste grátis, condições
+│   ├── profile.js              Assinatura, carteira, Minha Lista, histórico, editar perfil
+│   ├── settings.js             Conta, idioma, restaurar compras, suporte, termos, privacidade, política
+│   └── owner-panel.js          Métricas, planos, regras de moedas, pacotes, séries, episódios, Home, suporte
+├── tests/api.test.js           Testes das regras (Node)
+└── _legacy/                    Módulos antigos que não eram carregados pelo index.html (guardados para consulta)
 ```
 
----
+### Rotas
 
-## 🎨 1. Identidade Visual (VibeShort Reference)
-
-- **Fundo Cinematográfico:** Predominantemente preto e azul-marinho profundo (`#060810` / `#0A0D18`).
-- **Tipografia & Estilo:** Minimalista, cantos discretamente arredondados, moderna e de alta legibilidade.
-- **Elementos Removidos:**
-  - ❌ Sem emojis de coração para romance.
-  - ❌ Sem emojis nas categorias ou gêneros.
-  - ❌ Sem etiquetas genéricas como "99% compatível" ou poluição de badges coloridas.
-  - ❌ Sem repetição de capas e imagens.
-- **Responsividade Total:** Computador (com setas laterais de navegação), tablet e smartphone (com deslize por toque).
+`#/` início • `#/discover?q=...` • `#/series/<id>` • `#/store` • `#/plans` • `#/profile[/favorites|wallet|history]`
+• `#/settings[/account|language|restore|support|terms|privacy|subscription-policy]` • `#/owner`
 
 ---
 
-## 🎬 2. Catálogo e Página Inicial
+## O que é simulado hoje
 
-- **Destaque Principal da Home (Hero Banner):**
-  - Minissérie selecionada e configurada pelo Owner no Painel Administrativo.
-  - Imagem cinematográfica, título, sinopse, gêneros e classificação indicativa.
-  - Botões *"Assistir"* e *"Ver detalhes"*.
-- **Fileiras Horizontais (com setas de avançar/voltar e suporte a swipe):**
-  1. *Continue assistindo* (com barra de progresso em tempo real)
-  2. *Recomendado para você* (baseado no histórico e favoritos)
-  3. *Lançamentos*
-  4. *Mais populares*
-  5. *Romances*
-  6. *Drama e vingança*
-  7. *Ação e suspense*
-  8. *Fantasia*
-- **Cards Verticais 9:16:** Pôster cinematográfico, título, classificação e quantidade de episódios.
+| Item | Situação | O que falta |
+| :--- | :--- | :--- |
+| Login e senhas | Local, senha sem criptografia | Supabase Auth |
+| Login com Facebook/Google | Não incluído | Provedor OAuth no Supabase Auth + app no Facebook Developers |
+| Recuperar senha | Mostra confirmação, não envia e-mail | `resetPasswordForEmail` do Supabase |
+| Pagamento PIX/cartão | Botão "Confirmar" simula aprovação (aviso visível na tela) | Gateway (Mercado Pago, Pagar.me ou Stripe) + webhook no servidor |
+| Anúncio recompensado | Vídeo de exemplo, sem rede de anúncios | Google AdMob / AdSense for Games com verificação no servidor (SSV) |
+| Idiomas | Só português; inglês e espanhol marcados como "em breve" | Arquivos de tradução e catálogo legendado |
+| Vídeos | MP4 de exemplo do Google | Hospedagem com streaming adaptativo (Cloudflare Stream, Mux ou Bunny) |
+| Textos legais | Modelo baseado em CDC e LGPD com campos `[ENTRE COLCHETES]` | Preencher dados da empresa e revisão jurídica |
 
----
+## Caminho para produção
 
-## 🔒 3. Regras Reais de Monetização & Paywall
-
-### Episódios Gratuitos
-- Os primeiros **5 episódios** (Ep 1, 2, 3, 4 e 5) são **100% gratuitos** por padrão e **nunca são bloqueados**.
-- O Owner pode modificar a quantidade de episódios gratuitos por produção no Painel Administrativo.
-
-### Episódio 6 em Diante (Bloqueio Paywall)
-Ao tentar reproduzir a partir do episódio 6 sem assinatura ativa:
-1. O player é pausado imediatamente.
-2. O backend valida a permissão e emite bloqueio paywall.
-3. Abre-se o modal oferecendo duas opções reais:
-   - **Desbloquear 1 episódio com anúncio recompensado** (1 a cada 24 horas).
-   - **Assinar DRAMIX Premium**.
-
-### Anúncios Recompensados (Limite Rígido de 24 Horas)
-- Usuários gratuitos podem desbloquear no máximo **1 episódio a cada 24 horas**.
-- O anúncio possui **15 segundos de contagem regressiva não pulável**.
-- Se o usuário fechar o anúncio antes do término, **o episódio não é liberado**.
-- Quando o limite de 24 horas já foi atingido, o sistema bloqueia e exibe:
-  > *"Você já utilizou seu desbloqueio gratuito de hoje.*  
-  > *Assine o DRAMIX Premium para continuar assistindo a todas as histórias sem limites."*
-  Mostrando um contador exato de horas, minutos e segundos até o próximo desbloqueio.
-- O desbloqueio é gravado no banco de dados na tabela `rewarded_ad_unlocks` e `episode_unlocks` por conta de usuário.
-
----
-
-## 👑 4. Planos de Assinatura DRAMIX Premium
-
-Preços obrigatórios implementados e configuráveis pelo Owner:
-
-| Plano | Duração | Preço | Destaque Visual |
-| :--- | :--- | :--- | :--- |
-| **Plano Semanal** | 7 dias | **R$ 7,90** | Perfeito para maratonar |
-| **Plano Mensal** | 30 dias | **R$ 29,90** | Popular (~R$ 0,99/dia) |
-| **Plano Anual** | 12 meses | **R$ 199,90** | **Melhor Custo-Benefício** (Economia de 44% vs 12x mensal R$ 358,80) |
-
-- **Checkout Real:** Suporte a **PIX** (com QR Code e Copia e Cola) e **Cartão de Crédito**.
-- **Confirmação Real no Backend:** A assinatura só é ativada após a confirmação do pagamento, gravando a transação na tabela `payments` e gerando o registro na tabela `subscriptions` com data de expiração calculada.
-- **Benefícios Premium:**
-  - Acesso ilimitado e imediato a todos os episódios (sem travas a partir do ep. 6).
-  - Eliminação de anúncios obrigatórios.
-  - Badge Premium no perfil.
-  - Gestão de cancelamento de renovação automática no perfil do usuário.
-
----
-
-## 🛠️ 5. Painel Owner (Administrativo)
-
-Acesso restrito exclusivo para a conta com `role: 'owner'`:
-- **Dashboard de Métricas:** Assinantes ativos, usuários gratuitos, receita acumulada (R$), visualizações e desbloqueios de anúncios.
-- **Monetização:** Edição dos preços semanal, mensal e anual em tempo real.
-- **Minisséries:** Publicação de novas minisséries (título, sinopse, capa vertical 9:16, banner horizontal, gêneros, classificação e episódios gratuitos padrão).
-- **Episódios:** Adição de episódios com título, vídeo e duração.
-- **Home:** Definição da produção que ocupa o Hero Banner de destaque e reordenação das fileiras horizontais.
-
----
-
-## 🗄️ 6. Banco de Dados Relacional (14 Tabelas)
-
-1. `users` (id, email, password_hash, name, role, created_at)
-2. `user_profiles` (user_id, avatar, preferred_genres)
-3. `series` (id, title, synopsis, poster_url, backdrop_url, trailer_url, genres, content_rating, free_episodes_count, is_featured, is_published, views_count)
-4. `episodes` (id, series_id, episode_number, title, video_url, duration_seconds, is_free)
-5. `genres` (id, name, slug)
-6. `categories` (id, name, slug, order)
-7. `subscriptions` (id, user_id, plan_id, status, start_date, end_date, auto_renew, transaction_id)
-8. `subscription_plans` (id, name, price, duration_days, billing_period, is_active)
-9. `payments` (id, user_id, plan_id, amount, status, method, created_at)
-10. `episode_unlocks` (id, user_id, series_id, episode_id, unlock_type, unlocked_at)
-11. `rewarded_ad_unlocks` (id, user_id, episode_id, ad_token, completed, unlocked_at)
-12. `watch_history` (id, user_id, series_id, episode_id, progress_seconds, duration_seconds, completed)
-13. `favorites` (id, user_id, series_id)
-14. `homepage_sections` (id, title, row_type, filter_key, order, is_enabled)
-
----
-
-## 🧪 7. Guia de Testes dos 20 Itens Obrigatórios
-
-| # | Teste | Como Testar | Resultado Esperado |
-| :--- | :--- | :--- | :--- |
-| 1 | **Cadastro de novo usuário** | Clique em "Entrar" -> aba "Criar Conta" -> preencha nome, email e senha. | Usuário criado no banco e logado com role 'user'. |
-| 2 | **Login** | Clique em "Entrar" -> informe email e senha (ou use atalho "Usuário Gratuito"). | Sessão iniciada e nome exibido no cabeçalho. |
-| 3 | **Carregamento da página inicial** | Abra a Home. | Carrega Hero Banner e todas as fileiras cinematográficas. |
-| 4 | **Catálogo horizontal** | Passe o mouse sobre qualquer fileira e clique nas setas `<` e `>` (ou arraste). | Deslocamento horizontal suave dos cards. |
-| 5 | **Busca de minisséries** | Vá em "Descobrir" e digite "Contrato" ou "Bilionário". | Filtra em tempo real por título, gênero e sinopse. |
-| 6 | **Página de detalhes** | Clique em qualquer card de minissérie. | Exibe pôster 9:16, sinopse, classificação e lista de episódios. |
-| 7 | **Reprodução dos episódios gratuitos** | Clique no Episódio 1, 2, 3, 4 ou 5. | O player vertical 9:16 abre e inicia o vídeo normalmente. |
-| 8 | **Bloqueio após o quinto episódio** | Clique no Episódio 6 com usuário gratuito. | O player bloqueia o vídeo e abre o modal de Paywall. |
-| 9 | **Desbloqueio com anúncio** | No modal de Paywall, clique em "Assistir anúncio recompensado". | Exibe player de 15s com barra e, ao finalizar, libera o episódio. |
-| 10 | **Limite de 1 anúncio a cada 24h** | Tente desbloquear o Episódio 7 com anúncio no mesmo dia. | Mensagem de bloqueio de 24h com contador regressivo ativo. |
-| 11 | **Plano Semanal R$ 7,90** | Vá na aba "Planos" -> Card Semanal. | Exibe R$ 7,90 por 7 dias. |
-| 12 | **Plano Mensal R$ 29,90** | Aba "Planos" -> Card Mensal. | Exibe R$ 29,90 por 30 dias. |
-| 13 | **Plano Anual R$ 199,90** | Aba "Planos" -> Card Anual. | Exibe R$ 199,90 por 12 meses com economia destacada (44%). |
-| 14 | **Ativação Premium após pagamento** | Selecione qualquer plano -> clique em "Confirmar Pagamento". | Pagamento confirmado no banco e badge PREMIUM ativado. |
-| 15 | **Cancelamento de renovação** | Vá em "Meu Perfil" -> "Cancelar Renovação". | Auto-renovação desativada, acesso mantido até expiração. |
-| 16 | **Expiração de assinatura** | Verificado no backend quando `end_date < now()`. | Retorno automático para a categoria de usuário gratuito. |
-| 17 | **Acesso Premium completo** | Com conta Premium ativa, clique no Episódio 6, 7, 8, etc. | Todos os episódios reproduzem direto sem anúncios ou bloqueios. |
-| 18 | **Painel Owner** | Entre com a conta `owner@dramix.tv` (senha `owner123`). | Botão "Painel Owner" acessível com dashboard de métricas. |
-| 19 | **Publicação de minissérie** | No Painel Owner -> aba "Minisséries" -> preencha e publique. | Produção gravada com sucesso no banco de dados. |
-| 20 | **Aparição automática no catálogo** | Volte para a Home ou aba "Descobrir". | A nova produção aparece automaticamente nas fileiras e filtros. |
-
----
-
-## 🚀 Como Executar
-
-### Opção 1: Diretamente no Navegador
-Dê um duplo clique no arquivo [`index.html`](file:///C:/Users/55119/.gemini/antigravity/scratch/dramix/index.html) ou abra pelo caminho:
-```text
-C:\Users\55119\.gemini\antigravity\scratch\dramix\index.html
-```
-
-### Opção 2: Servidor Local PowerShell (Porta 8080)
-Execute no PowerShell dentro da pasta do projeto:
-```powershell
-cd C:\Users\55119\.gemini\antigravity\scratch\dramix
-powershell -ExecutionPolicy Bypass -File server.ps1
-```
-Acesse: `http://127.0.0.1:8080`
+1. **Supabase**: criar as tabelas com os mesmos nomes de `db/database.js` e ativar RLS (cada usuário só lê e escreve as próprias linhas).
+2. **Moedas no servidor**: `claim_daily_gift`, `unlock_episode`, `unlock_series` e `confirm_payment` viram funções RPC
+   (`security definer`) com `unique (user_id, ref)` em `coin_transactions`. O navegador nunca grava saldo.
+3. **Pagamentos**: o webhook do gateway chama `confirm_payment`. A tela só acompanha o status.
+4. **Vídeos protegidos**: episódios bloqueados servidos por URL assinada e com validade curta, gerada só depois da checagem de acesso.
+5. **Tailwind compilado**: trocar a tag da CDN pelo CSS gerado no build.

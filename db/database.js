@@ -9,7 +9,7 @@
 (function(root) {
   'use strict';
 
-  const STORAGE_KEY = 'dramix_database_v3';
+  const STORAGE_KEY = 'dramix_database_v4';
 
   class DramixDatabase {
     constructor() {
@@ -26,8 +26,13 @@
           // Garantir integridade de novas tabelas se banco antigo existir
           if (!this.data.collections) {
             this.data.collections = this.getSeedCollections();
-            this.save();
           }
+          // Garante as tabelas de moedas, loja e suporte em bancos criados antes delas
+          const commerce = this.getSeedCommerce();
+          for (const key of Object.keys(commerce)) {
+            if (!this.data[key]) this.data[key] = commerce[key];
+          }
+          this.save();
         } catch (e) {
           console.error('Erro ao ler banco de dados. Recriando banco padrão...', e);
           this.data = this.getSeedData();
@@ -237,7 +242,7 @@
             badge: 'EM ALTA',
             badge_color: 'bg-[#E52E4D]',
             content_rating: '14+',
-            free_episodes_count: 1, // REGRA EXATA: Ep 1 livre, Ep 2+ Premium
+            free_episodes_count: 5,
             is_featured: true,
             is_published: true,
             views_count: 3840200,
@@ -261,7 +266,7 @@
             badge: 'NOVO',
             badge_color: 'bg-emerald-500',
             content_rating: '14+',
-            free_episodes_count: 1,
+            free_episodes_count: 5,
             is_featured: false,
             is_published: true,
             views_count: 3120000,
@@ -285,13 +290,13 @@
             badge: 'FINALIZADO',
             badge_color: 'bg-amber-500 text-black',
             content_rating: '16+',
-            free_episodes_count: 1,
+            free_episodes_count: 5,
             is_featured: false,
             is_published: true,
             views_count: 2980000,
             completion_rate: 93,
             weekly_rank: 3,
-            rank_movement: '★ Estreia',
+            rank_movement: 'Estreia',
             marathon_score: 95,
             total_duration: '~23 min',
             episodes_count: 10,
@@ -309,7 +314,7 @@
             badge: 'EM ALTA',
             badge_color: 'bg-[#E52E4D]',
             content_rating: '16+',
-            free_episodes_count: 1,
+            free_episodes_count: 5,
             is_featured: false,
             is_published: true,
             views_count: 2450000,
@@ -333,7 +338,7 @@
             badge: 'NOVO',
             badge_color: 'bg-emerald-500',
             content_rating: '12+',
-            free_episodes_count: 1,
+            free_episodes_count: 5,
             is_featured: false,
             is_published: true,
             views_count: 2210000,
@@ -357,7 +362,7 @@
             badge: 'EM ALTA',
             badge_color: 'bg-[#E52E4D]',
             content_rating: '18+',
-            free_episodes_count: 1,
+            free_episodes_count: 5,
             is_featured: false,
             is_published: true,
             views_count: 3410000,
@@ -381,7 +386,7 @@
             badge: 'FINALIZADO',
             badge_color: 'bg-amber-500 text-black',
             content_rating: '14+',
-            free_episodes_count: 1,
+            free_episodes_count: 5,
             is_featured: false,
             is_published: true,
             views_count: 2890000,
@@ -405,7 +410,7 @@
             badge: 'NOVO',
             badge_color: 'bg-emerald-500',
             content_rating: '12+',
-            free_episodes_count: 1,
+            free_episodes_count: 5,
             is_featured: false,
             is_published: true,
             views_count: 2050000,
@@ -419,7 +424,7 @@
           }
         ],
 
-        // 10. EPISÓDIOS (REGRA EXATA: EPISÓDIO 1 LIVRE, EPISÓDIO 2 EM DIANTE COM CADEADO E DESBLOQUEAR COM PREMIUM)
+        // 10. EPISÓDIOS (EPISÓDIOS 1 A 5 GRÁTIS, 6 EM DIANTE COM MOEDAS, ANÚNCIO OU PREMIUM)
         episodes: this.generateSeedEpisodes(),
 
         // 11. DESBLOQUEIOS DE EPISÓDIOS
@@ -434,7 +439,10 @@
         // 14. MINHA LISTA (FAVORITOS)
         favorites: [],
 
-        // 15. SEÇÕES DA HOME
+        // 15. MOEDAS, LOJA, CONFIGURAÇÕES E SUPORTE
+        ...this.getSeedCommerce(),
+
+        // 16. SEÇÕES DA HOME
         homepage_sections: [
           { id: 'sec-hero', title: 'Em Destaque', row_type: 'hero', filter_key: 'featured', order: 1, is_enabled: true },
           { id: 'sec-continue', title: 'Continue Assistindo', row_type: 'continue_watching', filter_key: null, order: 2, is_enabled: true },
@@ -447,6 +455,35 @@
           { id: 'sec-action-suspense', title: 'Ação e Suspense', row_type: 'horizontal_row', filter_key: 'genre_acao_suspense', order: 9, is_enabled: true },
           { id: 'sec-fantasy', title: 'Fantasia', row_type: 'horizontal_row', filter_key: 'genre_fantasia', order: 10, is_enabled: true }
         ]
+      };
+    }
+
+    getSeedCommerce() {
+      return {
+        // Regras de moedas editáveis no Painel Owner
+        app_settings: [
+          {
+            id: 'settings',
+            welcome_bonus_coins: 50,
+            daily_gift_coins: 20,
+            episode_price_coins: 25,
+            series_bundle_discount_percent: 20,
+            default_free_episodes: 5,
+            rewarded_ad_cooldown_hours: 24,
+            support_email: 'suporte@dramix.tv'
+          }
+        ],
+        // Pacotes de moedas (bonus_coins entra além das moedas base)
+        coin_packages: [
+          { id: 'pkg-150', coins: 150, bonus_coins: 0, price: 4.90, badge: null, is_active: true, order: 1 },
+          { id: 'pkg-300', coins: 300, bonus_coins: 30, price: 9.90, badge: null, is_active: true, order: 2 },
+          { id: 'pkg-600', coins: 600, bonus_coins: 120, price: 19.90, badge: 'Mais escolhido', is_active: true, order: 3 },
+          { id: 'pkg-1200', coins: 1200, bonus_coins: 360, price: 39.90, badge: null, is_active: true, order: 4 },
+          { id: 'pkg-2400', coins: 2400, bonus_coins: 960, price: 79.90, badge: 'Melhor valor', is_active: true, order: 5 }
+        ],
+        // Extrato de moedas: cada linha é um crédito (+) ou débito (-). Saldo = soma.
+        coin_transactions: [],
+        support_tickets: []
       };
     }
 
@@ -511,8 +548,8 @@
 
       for (const s of seriesList) {
         for (let epNum = 1; epNum <= s.total; epNum++) {
-          // REGRA SOLICITADA: Episódio 1 livre, Episódio 2 em diante Premium
-          const isFree = epNum === 1;
+          // Episódios 1 a 5 gratuitos por padrão
+          const isFree = epNum <= 5;
           episodes.push({
             id: `ep-${s.id}-${epNum}`,
             series_id: s.id,

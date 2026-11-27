@@ -4,7 +4,7 @@
  * Inclui:
  * - Autoplay com contagem regressiva visual 3, 2, 1 ao finalizar o episódio
  * - Botão "Próximo Episódio" com avanço imediato e opção de cancelamento
- * - Regra estrita: Episódio 1 livre, Episódio 2+ com cadeado "Desbloquear com Premium"
+ * - Episódios gratuitos por série (padrão 5); os seguintes abrem o paywall (moedas, anúncio ou Premium)
  * - Suporte a tela cheia vertical, controle de volume, scrubbing e histórico de progresso em tempo real
  */
 
@@ -48,7 +48,7 @@
 
               <div class="flex items-center gap-2">
                 <!-- Status do Episódio -->
-                <span id="player-access-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500 text-white">Ep 1 Livre</span>
+                <span id="player-access-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500 text-white">Grátis</span>
                 
                 <button id="player-btn-close" class="w-10 h-10 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center border border-white/15 transition-transform active:scale-95 cursor-pointer">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -150,7 +150,7 @@
               <div class="flex items-center justify-between pb-3 border-b border-white/10">
                 <div>
                   <h4 class="text-xs font-bold text-white uppercase tracking-wider">Lista de Episódios</h4>
-                  <p class="text-[10px] text-gray-400">Episódio 1 livre • Episódio 2 em diante com Premium</p>
+                  <p id="player-drawer-subtitle" class="text-[10px] text-gray-400">Episódios gratuitos e bloqueados</p>
                 </div>
                 <button id="player-drawer-close" class="text-white/60 hover:text-white text-xs">&times; Fechar</button>
               </div>
@@ -297,8 +297,8 @@
       
       const badge = document.getElementById('player-access-badge');
       if (badge) {
-        if (targetEp.episode_number === 1) {
-          badge.textContent = 'Ep 1 Livre';
+        if (access.accessType === 'free') {
+          badge.textContent = 'Grátis';
           badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500 text-white';
         } else if (access.accessType === 'premium') {
           badge.textContent = 'Premium';
@@ -324,7 +324,7 @@
         playPromise.catch(() => {
           this.videoEl.muted = true;
           this.updateMuteUI(true);
-          this.videoEl.play();
+          this.videoEl.play().catch(() => this.showVideoError());
         });
       }
 
@@ -350,7 +350,7 @@
     togglePlay() {
       if (!this.videoEl) return;
       if (this.videoEl.paused) {
-        this.videoEl.play();
+        this.videoEl.play().catch(() => {});
       } else {
         this.videoEl.pause();
       }
@@ -431,7 +431,7 @@
       const nextEp = this.episodesList.find(e => e.episode_number === nextNum);
 
       if (!nextEp) {
-        alert('Você chegou ao último episódio desta minissérie!');
+        root.dramixUI.toast('Você chegou ao último episódio desta minissérie.', 'info');
         return;
       }
 
@@ -516,18 +516,23 @@
       if (!listContainer) return;
 
       const user = this.api.getCurrentUser();
+      const { esc, coinIcon } = root.dramixUI;
+      const freeLimit = this.api.getFreeEpisodesCount(this.currentSeries);
+      const price = this.api.getEpisodePrice(this.currentSeries);
+      const subtitle = document.getElementById('player-drawer-subtitle');
+      if (subtitle) subtitle.textContent = `Episódios 1 a ${freeLimit} grátis • depois ${price} moedas cada`;
 
       listContainer.innerHTML = this.episodesList.map(ep => {
         const isCurrent = this.currentEpisode && this.currentEpisode.id === ep.id;
         const access = this.api.validateEpisodeAccess(user ? user.id : null, this.currentSeries.id, ep.episode_number);
-        const isFree = ep.episode_number === 1;
+        const isFree = access.accessType === 'free';
 
         return `
           <div class="p-2.5 rounded-xl border flex items-center justify-between cursor-pointer drawer-ep-item transition-all ${isCurrent ? 'bg-[#E52E4D]/20 border-[#E52E4D] text-white' : 'bg-white/5 border-white/5 hover:bg-white/10 text-gray-300'}" data-ep-num="${ep.episode_number}">
             <div class="flex items-center gap-2.5 min-w-0">
               <span class="w-6 text-center font-bold text-xs ${isCurrent ? 'text-[#E52E4D]' : 'text-gray-400'}">${ep.episode_number}</span>
               <div class="min-w-0">
-                <p class="text-xs font-semibold truncate text-white">${ep.title}</p>
+                <p class="text-xs font-semibold truncate text-white">${esc(ep.title)}</p>
                 <span class="text-[10px] text-gray-400">${Math.round(ep.duration_seconds / 60)} min</span>
               </div>
             </div>
@@ -538,9 +543,9 @@
               ` : access.allowed ? `
                 <span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold uppercase">Liberado</span>
               ` : `
-                <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold uppercase flex items-center gap-1">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                  Desbloquear com Premium
+                <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 font-bold flex items-center gap-1">
+                  ${coinIcon('w-3 h-3')}
+                  ${price}
                 </span>
               `}
             </div>
@@ -558,6 +563,7 @@
     }
 
     handlePaywallBlock(series, episode, accessInfo) {
+      if (this.videoEl && !this.videoEl.paused) this.videoEl.pause();
       window.dispatchEvent(new CustomEvent('dramix-paywall-triggered', {
         detail: {
           series,
@@ -565,6 +571,12 @@
           accessInfo
         }
       }));
+    }
+
+    showVideoError() {
+      const spinner = document.getElementById('player-loading-spinner');
+      if (spinner) spinner.classList.add('hidden');
+      root.dramixUI.toast('Não foi possível carregar este vídeo. Confira sua conexão e tente de novo.', 'error');
     }
 
     formatTime(seconds) {

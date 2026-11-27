@@ -15,8 +15,12 @@
       this.selectedSort = 'popularity';
     }
 
-    render(container) {
-      const allSeries = this.api.db.table('series').find(s => s.is_published);
+    render(container, params = {}) {
+      if (typeof params.search === 'string') this.searchQuery = params.search;
+      if (params.genre) this.selectedGenre = params.genre;
+      const { esc, safeUrl, freeLabel } = root.dramixUI;
+      const user = this.api.getCurrentUser();
+      const allSeries = this.api.getVisibleSeries(user ? user.id : null);
       const genres = this.api.db.table('genres').all();
       const ratings = ['Livre', '12+', '14+', '16+', '18+'];
 
@@ -28,12 +32,13 @@
           const matchTitle = (s.title || '').toLowerCase().includes(q);
           const matchSynopsis = (s.synopsis || '').toLowerCase().includes(q);
           const matchGenres = (s.genres || []).some(g => g.toLowerCase().includes(q));
-          if (!matchTitle && !matchSynopsis && !matchGenres) return false;
+          const matchTropes = (s.tropes || []).some(t => t.toLowerCase().includes(q));
+          if (!matchTitle && !matchSynopsis && !matchGenres && !matchTropes) return false;
         }
 
         // Filtro por gênero
         if (this.selectedGenre !== 'all') {
-          if (!s.genres.includes(this.selectedGenre)) return false;
+          if (!(s.genres || []).includes(this.selectedGenre)) return false;
         }
 
         // Filtro por classificação indicativa
@@ -70,8 +75,9 @@
               <input 
                 type="text" 
                 id="discover-search-input" 
-                value="${this.searchQuery}" 
-                placeholder="Pesquisar por título, gênero, sinopse, palavras-chave..." 
+                value="${esc(this.searchQuery)}"
+                aria-label="Pesquisar minisséries"
+                placeholder="Pesquisar por título, gênero, tema ou sinopse" 
                 class="w-full bg-black/60 border border-white/15 focus:border-[#E52E4D] text-xs md:text-sm text-white placeholder-gray-500 rounded-xl pl-10 pr-4 py-3 outline-none transition-colors"
               />
               <svg class="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -85,8 +91,8 @@
                   Todos
                 </button>
                 ${genres.map(g => `
-                  <button class="genre-filter-btn flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${this.selectedGenre === g.name ? 'bg-[#E52E4D] text-white shadow' : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/5'}" data-genre="${g.name}">
-                    ${g.name}
+                  <button class="genre-filter-btn flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${this.selectedGenre === g.name ? 'bg-[#E52E4D] text-white shadow' : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/5'}" data-genre="${esc(g.name)}" aria-pressed="${this.selectedGenre === g.name}">
+                    ${esc(g.name)}
                   </button>
                 `).join('')}
               </div>
@@ -105,7 +111,7 @@
               </div>
 
               <div class="flex items-center gap-2">
-                <span class="text-gray-400">Ordenar por:</span>
+                <label for="discover-sort-select" class="text-gray-400">Ordenar por:</label>
                 <select id="discover-sort-select" class="bg-black/60 border border-white/15 text-white text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-[#E52E4D]">
                   <option value="popularity" ${this.selectedSort === 'popularity' ? 'selected' : ''}>Mais Populares</option>
                   <option value="newest" ${this.selectedSort === 'newest' ? 'selected' : ''}>Lançamentos</option>
@@ -125,26 +131,27 @@
             ${filtered.length === 0 ? `
               <div class="py-16 text-center space-y-2">
                 <p class="text-sm font-semibold text-white">Nenhuma minissérie encontrada com esses critérios.</p>
-                <p class="text-xs text-gray-400">Tente buscar por termos mais genéricos como "Romance" ou "Vingança".</p>
+                <p class="text-xs text-gray-400">Tente um termo mais amplo, como "Romance" ou "Vingança", ou limpe os filtros.</p>
+                <button id="discover-clear" class="mt-3 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold">Limpar filtros</button>
               </div>
             ` : `
               <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
                 ${filtered.map(series => `
-                  <div class="space-y-1.5 group cursor-pointer discover-series-card" data-id="${series.id}">
+                  <div class="space-y-1.5 group cursor-pointer discover-series-card" data-id="${esc(series.id)}" role="link" tabindex="0" aria-label="${esc(series.title)}">
                     <div class="relative aspect-[9/16] rounded-xl overflow-hidden bg-[#0A0D18] border border-white/10 group-hover:border-[#E52E4D] shadow-lg transition-all duration-300 group-hover:scale-[1.03]">
-                      <img src="${series.poster_url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-                      
+                      <img src="${safeUrl(series.poster_url)}" alt="" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                      <span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/70 text-emerald-400 text-[9px] font-bold">${freeLabel(series)}</span>
                       <div class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-gray-300 text-[9px] font-mono">
-                        ${series.content_rating || '14+'}
+                        ${esc(series.content_rating || '14+')}
                       </div>
                     </div>
 
                     <div>
                       <h4 class="text-xs font-bold text-white group-hover:text-[#E52E4D] truncate transition-colors">
-                        ${series.title}
+                        ${esc(series.title)}
                       </h4>
                       <p class="text-[10px] text-gray-400 truncate">
-                        ${series.genres ? series.genres.join(' • ') : ''}
+                        ${esc((series.genres || []).join(', '))}
                       </p>
                     </div>
                   </div>
@@ -196,7 +203,18 @@
         };
       }
 
+      const clearBtn = container.querySelector('#discover-clear');
+      if (clearBtn) {
+        clearBtn.onclick = () => {
+          this.searchQuery = '';
+          this.selectedGenre = 'all';
+          this.selectedRating = 'all';
+          this.render(container);
+        };
+      }
+
       container.querySelectorAll('.discover-series-card').forEach(card => {
+        card.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } };
         card.onclick = () => {
           const id = card.dataset.id;
           window.dispatchEvent(new CustomEvent('dramix-navigate-view', {
