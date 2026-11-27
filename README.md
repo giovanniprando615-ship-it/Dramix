@@ -1,5 +1,8 @@
 # DRAMIX — Minisséries em episódios curtos
 
+> **Versão 2.0 em `web/`** (React + TypeScript, Supabase, testes e CI). Comece por [`web/README.md`](web/README.md).
+> Esta raiz guarda a versão 1 em HTML/JS puro, que continua funcionando com duplo clique no `index.html`.
+
 Plataforma de streaming de minisséries verticais (romance, drama, ação, suspense) com episódios curtos,
 moedas virtuais, loja, assinatura Premium e painel administrativo.
 
